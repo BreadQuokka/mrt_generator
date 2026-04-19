@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마이리얼트립 상품 상세페이지 생성기</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Noto Sans KR', sans-serif; background: #f7f7f7; }
+
+.mrt-header {
+  background: white;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.mrt-logo {
+  background: #00C4B4;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.mrt-logo-text { font-size: 13px; color: #333; font-weight: 500; }
+
+.input-section {
+  background: white;
+  padding: 20px 16px;
+  border-bottom: 8px solid #f7f7f7;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.input-section h2 { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 12px; }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.input-row.full { grid-template-columns: 1fr; }
+.input-group label { font-size: 11px; color: #888; margin-bottom: 4px; display: block; }
+.input-group input, .input-group textarea, .input-group select {
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #333;
+  background: #fafafa;
+  outline: none;
+  font-family: inherit;
+}
+.input-group input:focus, .input-group textarea:focus, .input-group select:focus {
+  border-color: #00C4B4;
+  background: white;
+}
+.input-group textarea { resize: vertical; min-height: 90px; }
+
+.generate-btn {
+  width: 100%;
+  background: #00C4B4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.15s;
+}
+.generate-btn:hover { background: #00a89a; }
+.generate-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+.loading-overlay {
+  text-align: center;
+  padding: 40px 20px;
+  display: none;
+  background: white;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.loading-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #e0e0e0;
+  border-top-color: #00C4B4;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 13px; color: #888; }
+
+.result-section { display: none; max-width: 720px; margin: 0 auto; }
+
+.product-hero {
+  background: white;
+  padding: 16px;
+  border-bottom: 8px solid #f7f7f7;
+}
+.breadcrumb { font-size: 11px; color: #00C4B4; margin-bottom: 8px; }
+.product-title { font-size: 17px; font-weight: 700; color: #1a1a1a; line-height: 1.4; margin-bottom: 8px; }
+.star-row { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.stars { color: #FFB800; font-size: 13px; }
+.badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.badge { font-size: 11px; padding: 3px 8px; border-radius: 100px; font-weight: 500; }
+.badge-teal { background: #E6F9F7; color: #00847A; }
+.badge-orange { background: #FFF3E8; color: #E06C00; }
+.badge-blue { background: #EBF3FF; color: #2563EB; }
+.info-chips { display: flex; gap: 16px; font-size: 12px; color: #666; padding: 12px 0; border-top: 1px solid #f0f0f0; flex-wrap: wrap; }
+
+.tab-nav {
+  display: flex;
+  border-bottom: 1px solid #e8e8e8;
+  background: white;
+  overflow-x: auto;
+}
+.tab-item { padding: 12px 16px; font-size: 13px; color: #888; white-space: nowrap; border-bottom: 2px solid transparent; }
+.tab-item.active { color: #00C4B4; border-bottom-color: #00C4B4; font-weight: 600; }
+
+.section-block { background: white; padding: 16px; border-bottom: 8px solid #f7f7f7; }
+.section-title { font-size: 15px; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
+.section-body { font-size: 13px; color: #444; line-height: 1.8; }
+
+.usp-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.usp-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #333; line-height: 1.6; }
+.usp-dot { width: 6px; height: 6px; border-radius: 50%; background: #00C4B4; margin-top: 7px; flex-shrink: 0; }
+
+.course-item { margin-bottom: 16px; }
+.course-name { font-size: 13px; font-weight: 600; color: #222; margin-bottom: 4px; }
+.course-desc { font-size: 12px; color: #666; line-height: 1.7; }
+.course-divider { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+.course-divider-line { flex: 1; height: 1px; background: #f0f0f0; }
+.course-time { font-size: 11px; color: #00C4B4; background: #E6F9F7; padding: 2px 8px; border-radius: 100px; }
+
+.include-item { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 0; }
+.include-icon { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+.icon-yes { background: #E6F9F7; color: #00847A; }
+.icon-no { background: #FFF0F0; color: #E04040; }
+
+.target-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.target-tab {
+  font-size: 11px; padding: 5px 12px; border-radius: 100px;
+  border: 1px solid #e0e0e0; background: white; color: #666;
+  cursor: pointer; transition: all 0.15s;
+}
+.target-tab.active { background: #00C4B4; color: white; border-color: #00C4B4; }
+.copy-panel { background: #F8FFFE; border: 1px solid #C0EDE8; border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
+.copy-panel-title { font-size: 11px; color: #00847A; font-weight: 600; margin-bottom: 6px; }
+.copy-text { font-size: 13px; color: #333; line-height: 1.7; }
+
+.price-bar {
+  background: white;
+  padding: 14px 16px;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  bottom: 0;
+}
+.price-label { font-size: 11px; color: #888; }
+.price-value { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+.price-unit { font-size: 12px; color: #888; font-weight: 400; }
+.reserve-btn {
+  background: #00C4B4; color: white; border: none;
+  border-radius: 8px; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.reset-btn {
+  width: 100%; background: white; color: #00C4B4;
+  border: 1px solid #00C4B4; border-radius: 8px;
+  padding: 10px; font-size: 13px; font-weight: 600;
+  cursor: pointer; margin: 12px 0;
+}
+</style>
+</head>
+<body>
+
+<div class="mrt-header">
+  <div class="mrt-logo">mrt</div>
+  <span class="mrt-logo-text">상품 상세페이지 생성기</span>
+</div>
+
+<div class="input-section" id="input-section">
+  <h2>파트너 정보 입력</h2>
+  <div class="input-row">
+    <div class="input-group">
+      <label>지역</label>
+      <input id="in-region" placeholder="예: 일본 도쿄" />
+    </div>
+    <div class="input-group">
+      <label>상품 유형</label>
+      <select id="in-type">
+        <option>가이드 투어</option>
+        <option>입장권/어트랙션</option>
+        <option>액티비티</option>
+        <option>스냅촬영</option>
+        <option>클래스/체험</option>
+        <option>미식/레스토랑</option>
+      </select>
+    </div>
+  </div>
+  <div class="input-row">
+    <div class="input-group">
+      <label>소요 시간</label>
+      <input id="in-duration" placeholder="예: 4시간" />
+    </div>
+    <div class="input-group">
+      <label>가격 (원)</label>
+      <input id="in-price" placeholder="예: 89,000" />
+    </div>
+  </div>
+  <div class="input-row full">
+    <div class="input-group">
+      <label>파트너가 보낸 날것의 정보 (영어/한국어 섞여도 OK)</label>
+      <textarea id="in-raw" placeholder="예: Private tour, max 6ppl. Visit Senso-ji temple..."></textarea>
+    </div>
+  </div>
+  <button class="generate-btn" id="gen-btn" onclick="generatePage()">AI로 상세페이지 생성하기</button>
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <p class="loading-text">AI가 상세페이지를 작성 중입니다...</p>
+</div>
+
+<div class="result-section" id="result">
+  <div class="product-hero">
+    <div class="breadcrumb" id="out-breadcrumb"></div>
+    <div class="product-title" id="out-title"></div>
+    <div class="star-row">
+      <span class="stars">★★★★★</span>
+      <span style="font-size:12px;font-weight:600;color:#333">5.0</span>
+      <span style="font-size:12px;color:#888">· 후기 0개</span>
+    </div>
+    <div class="badge-row" id="out-badges"></div>
+    <div class="info-chips">
+      <span>⏱ <span id="out-duration"></span></span>
+      <span>🗣 한국어</span>
+      <span>👥 소수정예</span>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <div class="tab-item active">상품소개</div>
+    <div class="tab-item">코스</div>
+    <div class="tab-item">포함·불포함</div>
+    <div class="tab-item">이용안내</div>
+  </div>
+
+  <div class="section-block">
+    <div class="section-title">이런 분께 추천해요</div>
+    <div class="target-tabs" id="out-target-tabs"></div>
+    <div class="copy-panel" id="out-copy-panel" style="display:none">
+      <div class="copy-panel-title" id="out-copy-label"></div>
+      <div class="copy-text" id="out-copy-text"></div>
+    </div>
+  </div>
+
+  <div class="section-block">
+    <div class="section-title">상품 소개</div>
+    <div class="section-body" id="out-intro"></div>
+  </div>
+
+  <div class="section-block">
+    <div class="section-title">이런 점이 특별해요</div>
+    <ul class="usp-list" id="out-usp"></ul>
+  </div>
+
+  <div class="section-block">
+    <div class="section-title">코스</div>
+    <div id="out-course"></div>
+  </div>
+
+  <div class="section-block">
+    <div class="section-title">포함·불포함 사항</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:#00847A;margin-bottom:6px">포함되어 있어요</div>
+      <div id="out-include"></div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#E04040;margin-bottom:6px">포함되지 않아요</div>
+      <div id="out-exclude"></div>
+    </div>
+  </div>
+
+  <div style="background:white;padding:0 16px 16px;">
+    <button class="reset-btn" onclick="resetForm()">↩ 다시 생성하기</button>
+  </div>
+
+  <div class="price-bar">
+    <div>
+      <div class="price-label">최저가</div>
+      <div><span class="price-value" id="out-price"></span> <span class="price-unit">원~</span></div>
+    </div>
+    <button class="reserve-btn">예약하기</button>
+  </div>
+</div>
+
+<script>
+let generatedData = null;
+
+function showTargetCopy(label) {
+  document.querySelectorAll('.target-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('out-copy-label').textContent = label + ' 타겟 카피';
+  document.getElementById('out-copy-text').textContent = generatedData?.targetCopies?.[label] || '';
+  document.getElementById('out-copy-panel').style.display = 'block';
+}
+
+function resetForm() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('input-section').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+async function generatePage() {
+  const region = document.getElementById('in-region').value.trim();
+  const type = document.getElementById('in-type').value;
+  const duration = document.getElementById('in-duration').value.trim();
+  const price = document.getElementById('in-price').value.trim();
+  const raw = document.getElementById('in-raw').value.trim();
+
+  if (!raw) { alert('파트너 정보를 입력해주세요.'); return; }
+
+  document.getElementById('gen-btn').disabled = true;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('input-section').style.display = 'none';
+  document.getElementById('result').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ region, type, duration, price, raw })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'API 오류');
+    }
+
+    const parsed = await res.json();
+    generatedData = parsed;
+    renderPage(parsed, duration, price);
+  } catch(e) {
+    alert('오류: ' + e.message);
+    document.getElementById('input-section').style.display = 'block';
+  } finally {
+    document.getElementById('gen-btn').disabled = false;
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function renderPage(d, duration, price) {
+  document.getElementById('out-breadcrumb').textContent = d.breadcrumb || '';
+  document.getElementById('out-title').textContent = d.title || '';
+  document.getElementById('out-duration').textContent = duration || '';
+  document.getElementById('out-price').textContent = price || '';
+
+  const badgeColors = ['badge-teal', 'badge-orange', 'badge-blue'];
+  document.getElementById('out-badges').innerHTML = (d.badges || []).map((b,i) =>
+    `<span class="badge ${badgeColors[i%3]}">${b}</span>`).join('');
+
+  document.getElementById('out-intro').textContent = d.intro || '';
+
+  document.getElementById('out-usp').innerHTML = (d.usps || []).map(u =>
+    `<li class="usp-item"><div class="usp-dot"></div><span>${u}</span></li>`).join('');
+
+  document.getElementById('out-course').innerHTML = (d.courses || []).map((c,i,arr) => `
+    <div class="course-item">
+      <div class="course-name">${c.name}</div>
+      <div class="course-desc">${c.desc}</div>
+    </div>
+    ${i < arr.length-1 ? `<div class="course-divider"><div class="course-divider-line"></div><span class="course-time">${c.time||''}</span><div class="course-divider-line"></div></div>` : ''}
+  `).join('');
+
+  document.getElementById('out-include').innerHTML = (d.includes||[]).map(item =>
+    `<div class="include-item"><div class="include-icon icon-yes">✓</div><span style="font-size:13px;color:#333">${item}</span></div>`).join('');
+  document.getElementById('out-exclude').innerHTML = (d.excludes||[]).map(item =>
+    `<div class="include-item"><div class="include-icon icon-no">✕</div><span style="font-size:13px;color:#333">${item}</span></div>`).join('');
+
+  const tabsEl = document.getElementById('out-target-tabs');
+  tabsEl.innerHTML = Object.keys(d.targetCopies||{}).map((label,i) =>
+    `<button class="target-tab${i===0?' active':''}" onclick="showTargetCopy('${label}')">${label}</button>`).join('');
+
+  if (d.targetCopies) {
+    const firstKey = Object.keys(d.targetCopies)[0];
+    document.getElementById('out-copy-label').textContent = firstKey + ' 타겟 카피';
+    document.getElementById('out-copy-text').textContent = d.targetCopies[firstKey];
+    document.getElementById('out-copy-panel').style.display = 'block';
+  }
+
+  document.getElementById('result').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
